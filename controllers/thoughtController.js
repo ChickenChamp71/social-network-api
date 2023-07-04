@@ -1,22 +1,18 @@
-const { Thought, Reaction } = require('../models');
+const { Thought, User } = require('../models');
 
 module.exports = {
 
   getThoughts(req, res) {
     Thought.find()
-      .populate('reactions')
-      .then((thoughts) => {
-        thoughts.forEach((thought) => thought.populate('reactionCount'))
-        res.json(thoughts))
-      }
-    }
+      .select('-__v')
+      .then((thoughts) => res.json(thoughts))
       .catch((err) => res.status(500).json(err));
   },
   
   getSingleThought(req, res) {
     Thought.findOne({ _id: req.params.thoughtId })
-      .populate('reactions')
       .select('-__v')
+      .populate('reactions')
       .then((thought) =>
         !thought
           ? res.status(404).json({ message: 'No thought with that ID' })
@@ -27,21 +23,30 @@ module.exports = {
   
   createThought(req, res) {
     Thought.create(req.body)
-      .then((thought) => res.json(thought))
+      .then((thought) => {
+        createdThought = thought;
+        User.findOneAndUpdate(
+          { _id: req.body.userId },
+          { $push: { thoughts: thought._id }},
+          { new: true }
+        )
+      })
+      .then((user) => {
+        res.status(200).json(createdThought);
+      })
       .catch((err) => {
         console.log(err);
         return res.status(500).json(err);
       });
   },
   
-  deleteThought(req, res) {
-    Thought.findOneAndDelete({ _id: req.params.ThoughtId })
+  deleteThought: (req, res) => {
+    Thought.findOneAndDelete({ _id: req.params.thoughtId })
       .then((thought) =>
         !thought
           ? res.status(404).json({ message: 'No thought with that ID' })
-          : Reaction.deleteMany({ _id: { $in: thought.reactions } })
+          : res.json({ message: 'Thought deleted' })
       )
-      .then(() => res.json({ message: 'Thought and reactions deleted' }))
       .catch((err) => res.status(500).json(err));
   },
   

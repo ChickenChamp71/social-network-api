@@ -8,8 +8,9 @@ const thoughtSchema = new Schema(
             required: true,
             validate: {
                 validator: function(value) {
-                  return /^[A-Z]{3}-[0-9]{3}$/.test(value);
+                    return /^.{1,280}$/.test(value);
                 },
+            },
         },
         createdAt: {
             type: Date,
@@ -23,13 +24,13 @@ const thoughtSchema = new Schema(
             required: true
         },
         reactions: [reactionSchema]
-        },
     },
     {
         toJSON: {
             getters: true,
             virtuals: true
         },
+        id: false
     }
 );
 
